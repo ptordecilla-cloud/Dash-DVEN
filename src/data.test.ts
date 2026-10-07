@@ -1,0 +1,8 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {demo,exportCSV,importSnapshots,parseCSV,status,csvHeader} from './data';
+test('CSV export/import round trip preserves all monthly history',()=>assert.deepEqual(importSnapshots(exportCSV(demo.snapshots),{...demo,snapshots:[]}),demo));
+test('import replaces only the matching project/month',()=>{const next=importSnapshots(csvHeader+'\nDV-001,2026-06,18000,15000,65,61,false',demo);assert.equal(next.snapshots.length,demo.snapshots.length);assert.equal(next.snapshots.find(s=>s.projectId==='DV-001'&&s.month==='2026-06')?.physical,61);assert.deepEqual(next.snapshots.filter(s=>s.month==='2026-01'),demo.snapshots.filter(s=>s.month==='2026-01'));});
+test('reject invalid values, unknown projects, duplicate rows and empty files',()=>{for(const row of ['DV-001,2026-13,1,1,1,1,false','UNKNOWN,2026-06,1,1,1,1,false','DV-001,2026-06,1,1,101,1,false','DV-001,2026-06,,1,1,1,false','DV-001,2026-06,1,1,1,1,yes'])assert.throws(()=>importSnapshots(csvHeader+'\n'+row,demo));const row='DV-001,2026-06,1,1,1,1,false';assert.throws(()=>importSnapshots(csvHeader+'\n'+row+'\n'+row,demo));assert.throws(()=>importSnapshots(csvHeader,demo));});
+test('handles quoted commas, newlines and escaped quotes',()=>assert.deepEqual(parseCSV('"a,b","a""b"\r\n"two\nlines",ok'),[['a,b','a"b'],['two\nlines','ok']]));
+test('traffic lights use deviation thresholds',()=>{const s=demo.snapshots[0];assert.equal(status({...s,planned:50,physical:39}),'Crítico');assert.equal(status({...s,planned:50,physical:44}),'Atención');assert.equal(status({...s,planned:50,physical:45}),'En línea');});
