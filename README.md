@@ -51,3 +51,15 @@ Solo importar **datos ficticios de prueba**. Los IDs deben existir en los proyec
 4. No se requieren variables de entorno ni secretos. Publica y comprueba las siete vistas y el selector mensual.
 
 La navegación vive en estado React y no utiliza rutas de servidor: no requiere reglas de rewrite. El historial local depende del navegador y dominio; no se comparte entre usuarios ni entre dominios de preview y producción. La publicación no se realiza automáticamente desde este repositorio.
+
+## Carga Excel APIS (datos importados)
+
+El botón **Cargar Excel APIS / datos importados** abre un modo separado de la demostración. Selecciona un `.xlsx` (máximo 10 MB), elige la hoja, revisa la vista previa y confirma. Para archivos `.xls`, guarda una copia `.xlsx` en Excel. Se busca una fila de encabezados dentro de A–L, normalizando acentos y espacios:
+
+A Código de Proyecto; B Nombre; C Año de Presentación; D Total Proyecto KUSD; E Tipo Decisión Codelco; F Justificación; G Etapa; H Gestor-Ejecutor; I Área; J División; K Descripcion; L Proposito.
+
+Las columnas posteriores a L no se importan. Se validan códigos únicos, nombre, año y montos no negativos. Celdas numéricas se usan sin conversión; textos como `1.616` se interpretan como 1616 KUSD y `1.616,50` como 1616,50 KUSD. Fórmulas requieren un resultado calculado y guardado en Excel: el navegador no recalcula el libro. Una carga inválida conserva la cartera anterior.
+
+La carga reemplaza los datos maestros APIS, alimenta el CAPEX, gráfico, tabla filtrable y detalle con las doce columnas. Presupuesto anual, gasto, avances mensuales, cronograma y riesgos quedan **sin datos**: no se deducen ni se mezclan con cifras ficticias. La integración de CD agosto queda pendiente de su estructura y unidades. APIS no proporciona cortes mensuales, por lo que esta carga no crea historial mensual financiero.
+
+Los Excel se procesan localmente con ExcelJS. Los registros quedan en `sessionStorage`, separados de la demostración, durante la sesión de esa pestaña. El botón Eliminar datos importados borra la cartera. No hay subida de archivos a un servidor, sincronización con Drive ni datos corporativos incluidos en el código o GitHub. En equipos compartidos elimina los datos importados al finalizar.

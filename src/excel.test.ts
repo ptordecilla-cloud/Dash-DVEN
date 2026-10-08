@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import ExcelJS from 'exceljs';
+import {parseApis,parseAmount,readWorkbook} from './excel';
+const headers=['Código de Proyecto','Nombre','Año de Presentación','Total Proyecto KUSD','Tipo Decisión Codelco','Justificación','Etapa','Gestor-Ejecutor','Área','División','Descripcion','Proposito'];
+const row=['TEST-001','Proyecto ficticio',2026,'1.616','Prueba','Prueba','Prueba','Equipo Demo','Demo','Demo','Descripción','Propósito'];
+test('APIS maps twelve columns and Chilean amounts, ignores later columns',()=>{const result=parseApis([['Título'],headers,[...row,'Ignore']]);assert.equal(result[0].capex,1616);assert.equal(result[0].code,'TEST-001');assert.equal(result[0].purpose,'Propósito');assert.equal(parseAmount('3.563,50'),3563.5);assert.equal(parseAmount(5251),5251);});
+test('invalid and duplicate projects do not import',()=>{assert.throws(()=>parseApis([headers,row,row]));assert.throws(()=>parseApis([headers,[...row.slice(0,3),'invalid',...row.slice(4)]]));assert.throws(()=>parseApis([['wrong'],row]));assert.throws(()=>parseApis([headers]));});
+test('reads multi-sheet XLSX using only A to L and cached formulas',async()=>{const book=new ExcelJS.Workbook();book.addWorksheet('Instrucciones').addRow(['Sin proyectos']);const sheet=book.addWorksheet('APIS');sheet.addRow(headers);sheet.addRow(row);sheet.getCell('D2').value={formula:'1000+616',result:1616};sheet.getCell('M2').value='No importar';const buffer=await book.xlsx.writeBuffer();const sheets=await readWorkbook(buffer as unknown as ArrayBuffer);assert.equal(sheets.length,2);assert.equal(sheets[1].rows[1].length,12);assert.equal(parseApis(sheets[1].rows)[0].capex,1616);});
+test('missing formula cached value is rejected',async()=>{const book=new ExcelJS.Workbook();const sheet=book.addWorksheet('APIS');sheet.addRow(headers);sheet.addRow(row);sheet.getCell('D2').value={formula:'1+1'};const buffer=await book.xlsx.writeBuffer();await assert.rejects(readWorkbook(buffer as unknown as ArrayBuffer),/Recalcula/);});
