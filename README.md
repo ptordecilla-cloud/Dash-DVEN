@@ -60,6 +60,32 @@ A Código de Proyecto; B Nombre; C Año de Presentación; D Total Proyecto KUSD;
 
 Las columnas posteriores a L no se importan. Se validan códigos únicos, nombre, año y montos no negativos. Celdas numéricas se usan sin conversión; textos como `1.616` se interpretan como 1616 KUSD y `1.616,50` como 1616,50 KUSD. Fórmulas requieren un resultado calculado y guardado en Excel: el navegador no recalcula el libro. Una carga inválida conserva la cartera anterior.
 
-La carga reemplaza los datos maestros APIS, alimenta el CAPEX, gráfico, tabla filtrable y detalle con las doce columnas. Presupuesto anual, gasto, avances mensuales, cronograma y riesgos quedan **sin datos**: no se deducen ni se mezclan con cifras ficticias. La integración de CD agosto queda pendiente de su estructura y unidades. APIS no proporciona cortes mensuales, por lo que esta carga no crea historial mensual financiero.
+La carga reemplaza los datos maestros APIS, alimenta el CAPEX, gráfico, tabla filtrable y detalle con las doce columnas. Hasta cargar Flash, presupuesto anual, gasto, avances mensuales, cronograma y riesgos quedan **sin datos**: no se deducen ni se mezclan con cifras ficticias. APIS no proporciona cortes mensuales, por lo que su carga no crea historial financiero. La carga Flash descrita más abajo incorpora ese control en KUSD; CD agosto queda pendiente de su estructura.
 
 Los Excel se procesan localmente con ExcelJS. Los registros quedan en `sessionStorage`, separados de la demostración, durante la sesión de esa pestaña. El botón Eliminar datos importados borra la cartera. No hay subida de archivos a un servidor, sincronización con Drive ni datos corporativos incluidos en el código o GitHub. En equipos compartidos elimina los datos importados al finalizar.
+
+## Control mensual Flash · KUSD
+
+En el modo de datos importados, **Cargar Excel Flash** acepta `.xlsx` de hasta 10 MB. Lee A–AH (34 columnas), selecciona la hoja, detecta `Mes de Control` (por ejemplo `agosto-26`) y permite confirmar/corregir el mes antes de aplicar la vista previa. El formato es el encabezado Flash proporcionado: API en A, Nombre en B, Prog del total API en H, Inicio API en AE y Término máximo sin reformular en AH. No requiere ni lee información de Google Drive.
+
+Correspondencia de columnas (base 1):
+
+| Campo | Columna |
+| --- | --- |
+| Total API programado / real-proyectado | H / I |
+| Acumulado total financiero / físico | K / L |
+| Presupuesto anual / proyección anual financiera | M / N |
+| Avance físico anual programado / real-proyectado | P / Q |
+| Financiero enero–mes control programado / real | S / T |
+| Físico enero–mes control programado / real | V / W |
+| Gasto del mes programado / real | Y / Z |
+| Físico del mes programado / real | AB / AC |
+| Inicio / término autorizado / real-proyectado / máximo | AE / AF / AG / AH |
+
+Todos los montos Flash se interpretan en KUSD, confirmado por el usuario. Se aceptan números Excel y textos chilenos con `$`, puntos de miles y coma decimal. Porcentajes numéricos Excel deben guardarse como fracciones (0,291 = 29,1%); textos pueden usar `29,1%`. Las fechas pueden ser celdas de fecha Excel, DD-MM-YYYY o YYYY-MM-DD. Las fórmulas requieren valores calculados guardados. No se ejecutan macros ni se recalculan fórmulas.
+
+El CAPEX APIS y el total API Flash se muestran separados; no se convierten ni se reemplazan automáticamente. Presupuesto anual usa M; gasto acumulado usa T, no N ni Z. Avance físico ejecutivo usa V/W ponderado por M, solo para proyectos con ambos avances y presupuesto positivo. Se indica cobertura: vacíos son sin datos, no cero. No se utiliza Cumplimiento como porcentaje físico. Críticos: avance real menos programado < −10 puntos; atención: < −5. Alerta de reformulación por fecha: AG > AH; fechas faltantes dejan alerta sin datos. Es una señal temporal, no una evaluación formal.
+
+Cada registro es `(API, mes)`. Recargar la misma clave reemplaza solo ese corte. Los otros meses y códigos se conservan en `sessionStorage` (`dven-flash-v1`) durante la sesión de esa pestaña, incluyendo recargas de página. Exportar historial CSV permite conservar una copia fuera del navegador; ese CSV es un respaldo de consulta, no el formato de importación Flash. La persistencia compartida/permanente requerirá un backend futuro. La selección de corte actualiza KPIs, tablas, presupuesto y cronograma. Detalle muestra la comparación APIS/Flash y el historial por proyecto. Los proyectos sin APIS aparecen en la tabla Flash y en el selector de detalle como pendientes, sin inventar año ni CAPEX APIS.
+
+Flash y APIS se cargan de forma independiente y en cualquier orden. Los datos del usuario no están incrustados en el repositorio. CD agosto sigue pendiente de su estructura; no debe cargarse como Flash a menos que tenga exactamente ese diseño.
